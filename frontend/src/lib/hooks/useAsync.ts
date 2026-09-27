@@ -8,6 +8,7 @@ interface UseAsyncState<T> {
   data: T | null;
   error: Error | null;
   status: AsyncStatus;
+  attempt: number;
 }
 
 interface UseAsyncOptions {
@@ -44,6 +45,7 @@ export function useAsync<T>(
     data: null,
     error: null,
     status: 'idle',
+    attempt: 0,
   });
 
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -57,14 +59,14 @@ export function useAsync<T>(
     if (!isMountedRef.current) return;
     // Stale-while-revalidating: keep the last-successful data on screen while
     // (re)fetching so a transient blip never blanks already-rendered values.
-    setState((prev) => ({ ...prev, error: null, status: 'loading' }));
+    setState((prev) => ({ ...prev, error: null, status: 'loading', attempt: 0 }));
 
     let attempt = 0;
     for (;;) {
       try {
         const data = await asyncFunction(controller.signal);
         if (isMountedRef.current && !controller.signal.aborted) {
-          setState({ data, error: null, status: 'success' });
+          setState({ data, error: null, status: 'success', attempt: attempt + 1 });
         }
         return;
       } catch (error) {
@@ -73,6 +75,9 @@ export function useAsync<T>(
 
         if (attempt < retries) {
           attempt += 1;
+          if (isMountedRef.current) {
+            setState((prev) => ({ ...prev, attempt: attempt + 1 }));
+          }
           const delay =
             typeof retryDelayMs === 'function' ? retryDelayMs(attempt) : retryDelayMs;
           try {
@@ -85,7 +90,7 @@ export function useAsync<T>(
 
         if (isMountedRef.current) {
           const normalized = error instanceof Error ? error : new Error(String(error));
-          setState((prev) => ({ ...prev, error: normalized, status: 'error' }));
+          setState((prev) => ({ ...prev, error: normalized, status: 'error', attempt: attempt + 1 }));
         }
         return;
       }
