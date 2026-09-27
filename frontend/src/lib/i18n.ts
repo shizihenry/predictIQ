@@ -3,7 +3,7 @@
  * Supports multiple locales with fallback to English.
  */
 
-export type Locale = 'en' | 'es' | 'fr' | 'de';
+export type Locale = 'en';
 
 interface Translations {
   [key: string]: string | Translations;
@@ -148,6 +148,15 @@ const translations: LocaleData = {
       apiKeys: 'API Keys',
       apiKey: 'Admin API key',
       continue: 'Continue',
+    },
+    errorBoundary: {
+      title: 'Something went wrong',
+      defaultMessage: 'An unexpected error occurred.',
+      sectionMessage: 'An error occurred in the {section} section.',
+      reloadButton: 'Reload Page',
+      reportButton: 'Report Issue',
+      reloadAriaLabel: 'Reload the page',
+      reportAriaLabel: 'Report this issue',
     },
   },
 };
